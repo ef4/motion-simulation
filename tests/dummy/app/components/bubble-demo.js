@@ -28,14 +28,15 @@ export default Ember.Component.extend({
       return samples.map(elt => ({
         id: elt.id,
         fraction: elt.fraction,
-
         attractor: left,
-        finalRadius: elt.r * elt.fraction
+        finalRadius: elt.r * elt.fraction,
+        initialPosition: add(randomOffset(5), left)
       })).concat(samples.map(elt => ({
         id: elt.id,
         fraction: elt.fraction,
         attractor: right,
-        finalRadius: elt.r * (1 - elt.fraction)
+        finalRadius: elt.r * (1 - elt.fraction),
+        initialPosition: add(randomOffset(5), right)
       })));
     } else {
       let center = { x: width / 2, y: height / 2};
@@ -43,7 +44,8 @@ export default Ember.Component.extend({
         id: elt.id,
         fraction: elt.fraction,
         attractor: center,
-        finalRadius: elt.r
+        finalRadius: elt.r,
+        initialPosition: add(randomOffset(5), center)
       }));
     }
   }),
@@ -60,3 +62,10 @@ export default Ember.Component.extend({
   }
 
 });
+
+function randomOffset(distance) {
+  return {
+    x: distance * (Math.random() * 2 - 1),
+    y: distance * (Math.random() * 2 - 1)
+  };
+}

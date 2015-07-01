@@ -10,6 +10,9 @@ export default Ember.Component.extend({
   coolingRate: 0.01, // % of acceleration to attenuate every tick
   attractorStrength: 0.005, // pixels/ms^2
 
+  key: null, // Provide a key to give your objects continuity across
+             // rerenders. Can be a property path or a function.
+
   keyGetter: Ember.computed('key', function() {
     let key = this.get('key');
     if (key) {
@@ -21,10 +24,9 @@ export default Ember.Component.extend({
     }
   }),
 
-  circles: Ember.computed('bubbles', 'width', function() {
+  circles: Ember.computed('bubbles', function() {
     this.restart();
 
-    let center = { x: this.get('width') / 2, y: this.get('height') / 2 };
     let getKey = this.get('keyGetter');
 
     let priorCircles = {};
@@ -45,12 +47,8 @@ export default Ember.Component.extend({
         prevPosition = priorCircle.prevPosition;
         r = priorCircle.r;
       } else {
-        let randomOffset = {
-          x: Math.random() * 10 - 5,
-          y: Math.random() * 10 - 5
-        };
-        position = prevPosition = add(randomOffset, circle.attractor || center);
-        r = 0;
+        position = prevPosition = circle.initialPosition || { x: 0, y: 0 };
+        r = circle.initialRadius || 0;
       }
 
       return {
