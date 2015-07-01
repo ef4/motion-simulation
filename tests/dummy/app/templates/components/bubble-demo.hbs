@@ -1,30 +1,45 @@
 <svg>
 {{#bubble-motion as |world|}}
-  {{#if width}}
-    {{#if splitMode}}
 
-      {{#each randomSamples as |sample|}}
-        {{#physical-object in=world identity=sample.id attractor=leftSide finalRadius=(x-multiply sample.r (x-subtract 1 sample.fraction)) as |x y r|}}
-          <circle cx={{x}} cy={{y}} r={{r}} stroke="black" fill={{color-for sample.fraction}} />
-        {{/physical-object}}
-      {{/each}}
+  {{#if splitMode}}
 
-      {{#each randomSamples as |sample|}}
-        {{#physical-object in=world identity=sample.id attractor=rightSide finalRadius=(x-multiply sample.r sample.fraction) as |x y r|}}
-          <circle cx={{x}} cy={{y}} r={{r}} stroke="black" fill={{color-for sample.fraction}} />
-        {{/physical-object}}
-      {{/each}}
+    {{#each randomSamples as |sample|}}
+      {{#physical-object in=world
+                         identity=sample.id
+                         attractor=leftSide
+                         initialPosition=(close-to leftSide)
+                         finalRadius=sample.redThings
+                         as |x y r|}}
+        <circle cx={{x}} cy={{y}} r={{r}} stroke="black" fill={{color-for sample.fraction}} />
+      {{/physical-object}}
+    {{/each}}
 
-    {{else}}
+    {{#each randomSamples as |sample|}}
+      {{#physical-object in=world
+                         identity=sample.id
+                         attractor=rightSide
+                         initialPosition=(close-to rightSide)
+                         finalRadius=sample.blackThings
+                         as |x y r|}}
+        <circle cx={{x}} cy={{y}} r={{r}} stroke="black" fill={{color-for sample.fraction}} />
+      {{/physical-object}}
+    {{/each}}
 
-      {{#each randomSamples as |sample|}}
-        {{#physical-object in=world identity=sample.id attractor=middle finalRadius=sample.r as |x y r|}}
-          <circle cx={{x}} cy={{y}} r={{r}} stroke="black" fill={{color-for sample.fraction}} />
-        {{/physical-object}}
-      {{/each}}
+  {{else}}
 
-    {{/if}}
+    {{#each randomSamples as |sample|}}
+      {{#physical-object in=world
+                         identity=sample.id
+                         attractor=middle
+                         initialPosition=(close-to middle)
+                         finalRadius=sample.totalThings
+                         as |x y r|}}
+        <circle cx={{x}} cy={{y}} r={{r}} stroke="black" fill={{color-for sample.fraction}} />
+      {{/physical-object}}
+    {{/each}}
+
   {{/if}}
+
 {{/bubble-motion}}
 </svg>
 <button {{action "toggleMode"}}>Toggle</button>{{splitMode}}

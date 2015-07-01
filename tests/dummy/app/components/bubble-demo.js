@@ -1,4 +1,3 @@
-import { add } from 'motion-simulator/vectors';
 import Ember from 'ember';
 
 export default Ember.Component.extend({
@@ -7,10 +6,14 @@ export default Ember.Component.extend({
   randomSamples: Ember.computed(function() {
     let output = [];
     for (let id = 0; id < 30; id++) {
+      let amount = Math.random()*40;
+      let fraction = Math.random();
       output.push({
         id,
-        r: Math.random()*40,
-        fraction: Math.random()
+        totalThings: amount,
+        fraction,
+        redThings: fraction * amount,
+        blackThings: (1 - fraction) * amount
       });
     }
     return output;
@@ -41,10 +44,3 @@ export default Ember.Component.extend({
   }
 
 });
-
-function randomOffset(distance) {
-  return {
-    x: distance * (Math.random() * 2 - 1),
-    y: distance * (Math.random() * 2 - 1)
-  };
-}
