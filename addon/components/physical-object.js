@@ -7,7 +7,7 @@ export default Ember.Component.extend({
   didInsertElement() {
     let world = this.get('in');
     if (!world) {
-      throw new Error("physical-object must be placed inside a world");
+      throw new Error('physical-object must be placed inside a world');
     }
     world.addObject(this);
   },

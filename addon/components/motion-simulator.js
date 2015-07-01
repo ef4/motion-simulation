@@ -122,6 +122,13 @@ export default Ember.Component.extend({
   tick: function(timer) {
     if (this.isDestroyed) { return; }
     let stepSize = timer - this._lastTick;
+    if (stepSize > 64) {
+      // If the app has totally blown its frame budget for any reason
+      // (including moving away to another tab), it is better to
+      // stutter the animation than try to let the simulation "catch
+      // up" an interpolate across a big time step.
+      stepSize = 1;
+    }
     let objects = this.get('objects');
     let positions = this.nextPositions(objects, stepSize);
     for (let iterations = 0; iterations < 3; iterations++) {
