@@ -1,8 +1,10 @@
 <svg>
-  {{#bubble-motion bubbles=bubbles key="id" as |x y r model|}}
-    <circle cx={{x}} cy={{y}} r={{r}}
-            stroke="black" fill={{color-for model.fraction}}
-          />
-  {{/bubble-motion}}
+{{#bubble-motion as |world|}}
+  {{#each bubbles as |bubble|}}
+    {{#physical-object in=world identity=bubble.id initialPosition=bubble.initialPosition attractor=bubble.attractor finalRadius=bubble.finalRadius as |x y r|}}
+      <circle cx={{x}} cy={{y}} r={{r}} stroke="black" fill={{color-for bubble.fraction}} />
+    {{/physical-object}}
+  {{/each}}
+{{/bubble-motion}}
 </svg>
 <button {{action "toggleMode"}}>Toggle</button>

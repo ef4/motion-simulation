@@ -1,6 +1,6 @@
 import Ember from 'ember';
-import { add, subtract, multiply, unit, magnitude, reflect } from 'motion-simulator/vectors';
-import template from 'motion-simulator/templates/bubble-motion';
+import { add, subtract, multiply, unit, magnitude, reflect } from '../vectors';
+import template from '../templates/components/bubble-motion';
 
 export default Ember.Component.extend({
   layout: template,
@@ -10,8 +10,12 @@ export default Ember.Component.extend({
   coolingRate: 0.01, // % of acceleration to attenuate every tick
   attractorStrength: 0.005, // pixels/ms^2
 
-  key: null, // Provide a key to give your objects continuity across
-             // rerenders. Can be a property path or a function.
+  init() {
+    this._super();
+    this._desiredObjects = [];
+  },
+
+  key: null,
 
   keyGetter: Ember.computed('key', function() {
     let key = this.get('key');
@@ -21,45 +25,64 @@ export default Ember.Component.extend({
       } else {
         return (elt) => Ember.get(elt, key);
       }
+    } else {
+      return (elt) => elt;
     }
   }),
 
-  objects: Ember.computed('bubbles', function() {
+  addObject(obj) {
+    this._desiredObjects.push(obj);
+    this.propertyDidChange('objects');
+  },
+
+  removeObject(obj) {
+    for (let [index, o] of this._desiredObjects.entries()) {
+      if (o === obj) {
+        this._desiredObjects.splice(index, 1);
+        this.propertyDidChange('objects');
+        return;
+      }
+    }
+  },
+
+  objects: Ember.computed(function() {
     this.restart();
 
     let getKey = this.get('keyGetter');
 
     let priorObjects = {};
-    if (this._objects && getKey) {
+    if (this._objects) {
       for (let object of this._objects) {
-        let key = getKey(object.upstream);
+        let key = object.id;
         if (key != null) {
           priorObjects[key] = object;
         }
       }
     }
 
-    return this._objects = this.get('bubbles').map(object => {
+    return this._objects = this._desiredObjects.map(object => {
       let position, prevPosition, priorObject, r;
 
-      if (getKey && (priorObject = priorObjects[getKey(object)])) {
+      if ((priorObject = priorObjects[getKey(object.get('identity'))])) {
         position = priorObject.position;
         prevPosition = priorObject.prevPosition;
         r = priorObject.r;
       } else {
-        position = prevPosition = object.initialPosition || { x: 0, y: 0 };
-        r = object.initialRadius || 0;
+        position = prevPosition = object.get('initialPosition') || { x: 0, y: 0 };
+        r = object.get('initialRadius') || 0;
       }
-
-      return {
+      let tracker = {
         position,
         prevPosition: position,
         r,
         initialRadius: r,
-        finalRadius: object.finalRadius,
-        attractor: object.attractor,
-        upstream: object
+        finalRadius: object.get('finalRadius'),
+        attractor: object.get('attractor'),
+        upstream: object,
+        id: object.get('identity')
       };
+      object.place(tracker);
+      return tracker;
     });
   }),
 
