@@ -86,6 +86,11 @@ export default Ember.Component.extend({
     });
   }),
 
+  motionState: Ember.computed('objects', function() {
+    this.get('objects');
+    return '';
+  }),
+
   didInsertElement: function() {
     this.start();
   },
