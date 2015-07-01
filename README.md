@@ -1,6 +1,7 @@
 # Motion-simulator
 
-This README outlines the details of collaborating on this Ember addon.
+This repo is an experiment on how to compose rich motion-driven graphs
+with Ember components.
 
 ## Installation
 
