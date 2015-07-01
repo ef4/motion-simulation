@@ -16,39 +16,18 @@ export default Ember.Component.extend({
     return output;
   }),
 
-  bubbles: Ember.computed('width', 'height', 'splitMode', 'randomSamples', function() {
-    let width = this.get('width');
-    let height = this.get('height');
-    let samples = this.get('randomSamples');
-    if (width == null) { return []; }
-
-    if (this.get('splitMode')) {
-      let left =  { x:     width / 3, y: height / 2};
-      let right = { x: 2 * width / 3, y: height / 2};
-      return samples.map(elt => ({
-        id: elt.id,
-        fraction: elt.fraction,
-        attractor: left,
-        finalRadius: elt.r * elt.fraction,
-        initialPosition: add(randomOffset(5), left)
-      })).concat(samples.map(elt => ({
-        id: elt.id,
-        fraction: elt.fraction,
-        attractor: right,
-        finalRadius: elt.r * (1 - elt.fraction),
-        initialPosition: add(randomOffset(5), right)
-      })));
-    } else {
-      let center = { x: width / 2, y: height / 2};
-      return samples.map(elt => ({
-        id: elt.id,
-        fraction: elt.fraction,
-        attractor: center,
-        finalRadius: elt.r,
-        initialPosition: add(randomOffset(5), center)
-      }));
-    }
+  leftSide: Ember.computed('width', 'height', function() {
+    return { x: this.get('width') / 3, y: this.get('height') / 2};
   }),
+
+  rightSide: Ember.computed('width', 'height', function() {
+    return { x: 2 * this.get('width') / 3, y: this.get('height') / 2};
+  }),
+
+  middle: Ember.computed('width', 'height', function() {
+    return { x: this.get('width') / 2, y: this.get('height') / 2};
+  }),
+
 
   didInsertElement() {
     this.set('width', this.$('svg').width());
