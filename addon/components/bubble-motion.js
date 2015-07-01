@@ -24,31 +24,31 @@ export default Ember.Component.extend({
     }
   }),
 
-  circles: Ember.computed('bubbles', function() {
+  objects: Ember.computed('bubbles', function() {
     this.restart();
 
     let getKey = this.get('keyGetter');
 
-    let priorCircles = {};
-    if (this._circles && getKey) {
-      for (let circle of this._circles) {
-        let key = getKey(circle.upstream);
+    let priorObjects = {};
+    if (this._objects && getKey) {
+      for (let object of this._objects) {
+        let key = getKey(object.upstream);
         if (key != null) {
-          priorCircles[key] = circle;
+          priorObjects[key] = object;
         }
       }
     }
 
-    return this._circles = this.get('bubbles').map(circle => {
-      let position, prevPosition, priorCircle, r;
+    return this._objects = this.get('bubbles').map(object => {
+      let position, prevPosition, priorObject, r;
 
-      if (getKey && (priorCircle = priorCircles[getKey(circle)])) {
-        position = priorCircle.position;
-        prevPosition = priorCircle.prevPosition;
-        r = priorCircle.r;
+      if (getKey && (priorObject = priorObjects[getKey(object)])) {
+        position = priorObject.position;
+        prevPosition = priorObject.prevPosition;
+        r = priorObject.r;
       } else {
-        position = prevPosition = circle.initialPosition || { x: 0, y: 0 };
-        r = circle.initialRadius || 0;
+        position = prevPosition = object.initialPosition || { x: 0, y: 0 };
+        r = object.initialRadius || 0;
       }
 
       return {
@@ -56,9 +56,9 @@ export default Ember.Component.extend({
         prevPosition: position,
         r,
         initialRadius: r,
-        finalRadius: circle.finalRadius,
-        attractor: circle.attractor,
-        upstream: circle
+        finalRadius: object.finalRadius,
+        attractor: object.attractor,
+        upstream: object
       };
     });
   }),
@@ -76,8 +76,8 @@ export default Ember.Component.extend({
     // so the imputed velocity of each will be zero regardless of this
     // value.
     this._prevStepSize = 0.001;
-    this.get('circles').forEach(circle => {
-      circle.prevPosition = circle.position;
+    this.get('objects').forEach(object => {
+      object.prevPosition = object.position;
     });
 
     this._cooling = 1;
@@ -92,12 +92,12 @@ export default Ember.Component.extend({
   tick: function(timer) {
     if (this.isDestroyed) { return; }
     let stepSize = timer - this._lastTick;
-    let circles = this.get('circles');
-    let positions = this.nextPositions(circles, stepSize);
+    let objects = this.get('objects');
+    let positions = this.nextPositions(objects, stepSize);
     for (let iterations = 0; iterations < 3; iterations++) {
-      positions = this.applyConstraints(circles, positions);
+      positions = this.applyConstraints(objects, positions);
     }
-    this.updatePositions(circles, positions);
+    this.updatePositions(objects, positions);
     this._prevStepSize = stepSize;
     this._lastTick = timer;
     this._cooling = this._cooling * (1 - this.get('coolingRate'));
@@ -108,20 +108,20 @@ export default Ember.Component.extend({
     }
   },
 
-  nextPositions: function(circles, stepSize) {
+  nextPositions: function(objects, stepSize) {
     let prevStepSize = this._prevStepSize;
     let antiDamping = 1 - this.get('damping');
     let attractorStrength = this.attractorStrength;
     let cooling = this._cooling;
-    let newState = new Array(circles.length);
+    let newState = new Array(objects.length);
 
-    for (let [circleIndex, circle] of circles.entries()) {
-      let { position, prevPosition } = circle;
+    for (let [objectIndex, object] of objects.entries()) {
+      let { position, prevPosition } = object;
       let a;
 
-      if (circle.attractor) {
+      if (object.attractor) {
         a = multiply(
-          unit(subtract(circle.attractor, position)),
+          unit(subtract(object.attractor, position)),
           attractorStrength * cooling * (stepSize + prevStepSize) * stepSize / 2
         );
       } else {
@@ -134,7 +134,7 @@ export default Ember.Component.extend({
         a
       );
 
-      newState[circleIndex] = { next, position };
+      newState[objectIndex] = { next, position };
     }
     return newState;
   },
@@ -146,14 +146,14 @@ export default Ember.Component.extend({
     return Math.min((1 - this._cooling) * 5, 1);
   },
 
-  applyConstraints: function(circles, newPositions) {
+  applyConstraints: function(objects, newPositions) {
     let effectiveRadius = this.effectiveRadius();
-    for (let i = 0; i < circles.length; i++) {
-      for (let j = i + 1; j < circles.length; j++) {
+    for (let i = 0; i < objects.length; i++) {
+      for (let j = i + 1; j < objects.length; j++) {
         let { next: next1, position: position1 } = newPositions[i];
         let { next: next2, position: position2 } = newPositions[j];
-        let r1 = circles[i].finalRadius * effectiveRadius;
-        let r2 = circles[j].finalRadius * effectiveRadius;
+        let r1 = objects[i].finalRadius * effectiveRadius;
+        let r2 = objects[j].finalRadius * effectiveRadius;
         let separation = subtract(next1, next2);
         let distance = magnitude(separation);
         let normal = unit(separation, distance);
@@ -172,14 +172,14 @@ export default Ember.Component.extend({
     return newPositions;
   },
 
-  updatePositions: function(circles, newPositions) {
+  updatePositions: function(objects, newPositions) {
     let er = this.effectiveRadius();
-    for (let [circleIndex, circle] of circles.entries()) {
-      let { next, position } = newPositions[circleIndex];
-      Ember.set(circle, 'prevPosition', position);
-      Ember.set(circle, 'position', next);
-      if (circle.r !== circle.finalRadius) {
-        Ember.set(circle, 'r', er * (circle.finalRadius - circle.initialRadius) + circle.initialRadius);
+    for (let [objectIndex, object] of objects.entries()) {
+      let { next, position } = newPositions[objectIndex];
+      Ember.set(object, 'prevPosition', position);
+      Ember.set(object, 'position', next);
+      if (object.r !== object.finalRadius) {
+        Ember.set(object, 'r', er * (object.finalRadius - object.initialRadius) + object.initialRadius);
       }
     }
   }
