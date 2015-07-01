@@ -1,0 +1,8 @@
+<svg>
+  {{#bubble-motion bubbles=bubbles width=width height=height key="id" as |x y r model|}}
+    <circle cx={{x}} cy={{y}} r={{r}}
+            stroke="black" fill={{color-for model.fraction}}
+          />
+  {{/bubble-motion}}
+</svg>
+<button {{action "toggleMode"}}>Toggle</button>
