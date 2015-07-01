@@ -1,5 +1,5 @@
 <svg>
-{{#bubble-motion as |world|}}
+{{#motion-simulator as |world|}}
 
   {{#if splitMode}}
 
@@ -40,6 +40,6 @@
 
   {{/if}}
 
-{{/bubble-motion}}
+{{/motion-simulator}}
 </svg>
 <button {{action "toggleMode"}}>Toggle</button>{{splitMode}}

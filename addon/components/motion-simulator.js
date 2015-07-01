@@ -1,6 +1,6 @@
 import Ember from 'ember';
 import { add, subtract, multiply, unit, magnitude, reflect } from '../vectors';
-import template from '../templates/components/bubble-motion';
+import template from '../templates/components/motion-simulator';
 
 export default Ember.Component.extend({
   layout: template,
