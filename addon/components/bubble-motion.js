@@ -86,6 +86,8 @@ export default Ember.Component.extend({
     });
   }),
 
+  // This exists to ensure that objects will always recompute after
+  // being invalidated.
   motionState: Ember.computed('objects', function() {
     this.get('objects');
     return '';
