@@ -145,10 +145,31 @@ export default Ember.Component.extend({
     }
   },
 
+  // Attractors are currently implemented as a constant force that is
+  // independent of distance *except* that the force attenuates to
+  // zero as you get very close, in order to prevent objects that are
+  // sitting on their attractors from vibrating.
+  attractorForce: Ember.computed('attractorStrength', function() {
+    let strength = this.get('attractorStrength');
+    let cutoff = 2;
+    return (attractor, position, stepSize, prevStepSize, cooling) => {
+      let separation = subtract(attractor, position);
+      let distance = magnitude(separation);
+      let attenuation = 1;
+      if (distance < cutoff) {
+        attenuation = distance * distance / (cutoff * cutoff);
+      }
+      return multiply(
+        unit(separation),
+        attenuation * strength * cooling * (stepSize + prevStepSize) * stepSize / 2
+      );
+    };
+  }),
+
   nextPositions: function(objects, stepSize) {
     let prevStepSize = this._prevStepSize;
     let antiDamping = 1 - this.get('damping');
-    let attractorStrength = this.attractorStrength;
+    let attractorForce = this.get('attractorForce');
     let cooling = this._cooling;
     let newState = new Array(objects.length);
 
@@ -157,10 +178,7 @@ export default Ember.Component.extend({
       let a;
 
       if (object.attractor) {
-        a = multiply(
-          unit(subtract(object.attractor, position)),
-          attractorStrength * cooling * (stepSize + prevStepSize) * stepSize / 2
-        );
+        a = attractorForce(object.attractor, position, stepSize, prevStepSize, cooling);
       } else {
         a = { x: 0, y: 0 };
       }
