@@ -53,7 +53,7 @@ export default Ember.Component.extend({
     let priorObjects = {};
     if (this._objects) {
       for (let object of this._objects) {
-        let key = object.id;
+        let key = object.upstream.get('identity');
         if (key != null) {
           priorObjects[key] = object;
         }
@@ -76,10 +76,10 @@ export default Ember.Component.extend({
         prevPosition: position,
         r,
         initialRadius: r,
+        // we copy this off as a performance optimization, because
+        // applyConstraints hits it a lot in a very hot path.
         finalRadius: object.get('finalRadius'),
-        attractor: object.get('attractor'),
-        upstream: object,
-        id: object.get('identity')
+        upstream: object
       };
       object.place(tracker);
       return tracker;
@@ -183,10 +183,11 @@ export default Ember.Component.extend({
 
     for (let [objectIndex, object] of objects.entries()) {
       let { position, prevPosition } = object;
+      let attractor = object.upstream.get('attractor');
       let a;
 
-      if (object.attractor) {
-        a = attractorForce(object.attractor, position, stepSize, prevStepSize, cooling);
+      if (attractor) {
+        a = attractorForce(attractor, position, stepSize, prevStepSize, cooling);
       } else {
         a = { x: 0, y: 0 };
       }
@@ -239,10 +240,12 @@ export default Ember.Component.extend({
     let er = this.effectiveRadius();
     for (let [objectIndex, object] of objects.entries()) {
       let { next, position } = newPositions[objectIndex];
+      let finalRadius = object.upstream.get('finalRadius');
+      object.finalRadius = finalRadius;
       Ember.set(object, 'prevPosition', position);
       Ember.set(object, 'position', next);
-      if (object.r !== object.finalRadius) {
-        Ember.set(object, 'r', er * (object.finalRadius - object.initialRadius) + object.initialRadius);
+      if (object.r !== finalRadius) {
+        Ember.set(object, 'r', er * (finalRadius - object.initialRadius) + object.initialRadius);
       }
     }
   }
