@@ -9,26 +9,13 @@ export default Ember.Component.extend({
   damping: 0.08, // % of velocity to kill every tick
   coolingRate: 0.01, // % of acceleration to attenuate every tick
   attractorStrength: 0.005, // pixels/ms^2
+  attractorNearLimit: 4,    // pixels
+  collisionsEnabled: true,
 
   init() {
     this._super();
     this._desiredObjects = [];
   },
-
-  key: null,
-
-  keyGetter: Ember.computed('key', function() {
-    let key = this.get('key');
-    if (key) {
-      if (typeof key === 'function') {
-        return key;
-      } else {
-        return (elt) => Ember.get(elt, key);
-      }
-    } else {
-      return (elt) => elt;
-    }
-  }),
 
   addObject(obj) {
     this._desiredObjects.push(obj);
@@ -45,10 +32,8 @@ export default Ember.Component.extend({
     }
   },
 
-  objects: Ember.computed(function() {
+  objects: Ember.computed('resumeOn', function() {
     this.restart();
-
-    let getKey = this.get('keyGetter');
 
     let priorObjects = {};
     if (this._objects) {
@@ -63,7 +48,7 @@ export default Ember.Component.extend({
     return this._objects = this._desiredObjects.map(object => {
       let position, prevPosition, priorObject, r;
 
-      if ((priorObject = priorObjects[getKey(object.get('identity'))])) {
+      if ((priorObject = priorObjects[object.get('identity')])) {
         position = priorObject.position;
         prevPosition = priorObject.prevPosition;
         r = priorObject.r;
@@ -139,8 +124,10 @@ export default Ember.Component.extend({
     }
     let objects = this.get('objects');
     let positions = this.nextPositions(objects, stepSize);
-    for (let iterations = 0; iterations < 3; iterations++) {
-      positions = this.applyConstraints(objects, positions);
+    if (this.get('collisionsEnabled')) {
+      for (let iterations = 0; iterations < 3; iterations++) {
+        positions = this.applyConstraints(objects, positions);
+      }
     }
     this.updatePositions(objects, positions);
     this._prevStepSize = stepSize;
@@ -159,7 +146,7 @@ export default Ember.Component.extend({
   // sitting on their attractors from vibrating.
   attractorForce: Ember.computed('attractorStrength', function() {
     let strength = this.get('attractorStrength');
-    let cutoff = 2;
+    let cutoff = this.get('attractorNearLimit');
     return (attractor, position, stepSize, prevStepSize, cooling) => {
       let separation = subtract(attractor, position);
       let distance = magnitude(separation);
