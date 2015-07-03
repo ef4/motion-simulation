@@ -11,6 +11,7 @@ export default Ember.Component.extend({
   attractorStrength: 0.005, // pixels/ms^2
   attractorNearLimit: 4,    // pixels
   collisionsEnabled: true,
+  radiusGrowth: 0.10, // % to grow or shrink radii per tick
 
   init() {
     this._super();
@@ -78,7 +79,7 @@ export default Ember.Component.extend({
     return '';
   }),
 
-  didInsertElement: function() {
+  didInsertElement() {
     if (this.get('ready')) {
       // The user may optionally provide a `ready` action hander that
       // we will call before we start, allowing them to do any
@@ -89,7 +90,7 @@ export default Ember.Component.extend({
     }
   },
 
-  start: function() {
+  start() {
     this.set('chartInitialized', true);
     if (this._lastTick) { return; }
     this._lastTick = window.performance.now();
@@ -107,12 +108,12 @@ export default Ember.Component.extend({
     window.requestAnimationFrame((timer) => this.tick(timer));
   },
 
-  restart: function() {
+  restart() {
     this._cooling = 1;
     this.start();
   },
 
-  tick: function(timer) {
+  tick(timer) {
     if (this.isDestroyed) { return; }
     let stepSize = timer - this._lastTick;
     if (stepSize > 64) {
@@ -161,11 +162,12 @@ export default Ember.Component.extend({
     };
   }),
 
-  nextPositions: function(objects, stepSize) {
+  nextPositions(objects, stepSize) {
     let prevStepSize = this._prevStepSize;
     let antiDamping = 1 - this.get('damping');
     let attractorForce = this.get('attractorForce');
     let cooling = this._cooling;
+    let radiusGrowth = this.get('radiusGrowth');
     let newState = new Array(objects.length);
 
     for (let [objectIndex, object] of objects.entries()) {
@@ -185,19 +187,37 @@ export default Ember.Component.extend({
         a
       );
 
-      newState[objectIndex] = { next, position };
+      newState[objectIndex] = { next, position, radius: this.nextRadius(object, radiusGrowth) };
     }
     return newState;
   },
 
-  effectiveRadius: function() {
+  effectiveRadius() {
     // early in the animation we give each bubble a small effective
     // radius so they can slide freely past each other. Then we let it
     // rapidly come up to full size so they don't overlap.
     return Math.min((1 - this._cooling) * 5, 1);
   },
 
-  applyConstraints: function(objects, newPositions) {
+  nextRadius(object, radiusGrowth) {
+    let finalRadius = object.upstream.get('finalRadius');
+    let radiusDiff = finalRadius - object.r;
+
+    // Update our fast cache so it can be used in applyConstraints.
+    object.finalRadius = finalRadius;
+
+    if (Math.abs(radiusDiff) > 1) {
+      // If we're more than one pixel away from finalRadius, grow or
+      // shrink radius by radiusGrowth percent.
+      return object.r + radiusGrowth * radiusDiff;
+    } else {
+      // When we get within one pixel, just jump to final size, so
+      // we don't tail off forever.
+      return object.finalRadius;
+    }
+  },
+
+  applyConstraints(objects, newPositions) {
     let effectiveRadius = this.effectiveRadius();
     for (let i = 0; i < objects.length; i++) {
       for (let j = i + 1; j < objects.length; j++) {
@@ -223,17 +243,12 @@ export default Ember.Component.extend({
     return newPositions;
   },
 
-  updatePositions: function(objects, newPositions) {
-    let er = this.effectiveRadius();
+  updatePositions(objects, newPositions) {
     for (let [objectIndex, object] of objects.entries()) {
-      let { next, position } = newPositions[objectIndex];
-      let finalRadius = object.upstream.get('finalRadius');
-      object.finalRadius = finalRadius;
+      let { next, position, radius } = newPositions[objectIndex];
       Ember.set(object, 'prevPosition', position);
       Ember.set(object, 'position', next);
-      if (object.r !== finalRadius) {
-        Ember.set(object, 'r', er * (finalRadius - object.initialRadius) + object.initialRadius);
-      }
+      Ember.set(object, 'r', radius);
     }
   }
 
