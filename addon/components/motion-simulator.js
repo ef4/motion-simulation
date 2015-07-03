@@ -94,10 +94,18 @@ export default Ember.Component.extend({
   }),
 
   didInsertElement: function() {
-    this.start();
+    if (this.get('ready')) {
+      // The user may optionally provide a `ready` action hander that
+      // we will call before we start, allowing them to do any
+      // necessary setup like measuring the DOM.
+      this.sendAction('ready', () => this.start());
+    } else {
+      this.start();
+    }
   },
 
   start: function() {
+    this.set('chartInitialized', true);
     if (this._lastTick) { return; }
     this._lastTick = window.performance.now();
 

@@ -1,2 +1,4 @@
-{{yield this}}
-{{motionState}}
+{{#if chartInitialized}}
+  {{yield this}}
+  {{motionState}}
+{{/if}}
