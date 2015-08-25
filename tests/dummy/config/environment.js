@@ -40,7 +40,9 @@ module.exports = function(environment) {
   }
 
   if (environment === 'production') {
-
+    // For github pages
+    ENV.baseURL = '/motion-simulation';
+    ENV.locationType = 'hash';
   }
 
   return ENV;
